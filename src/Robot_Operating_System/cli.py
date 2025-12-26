@@ -1,28 +1,19 @@
 import argparse
+from pathlib import Path
+from limb import Limb
 
-from mypy.dmypy.client import subparsers
+ROOT = Path(__file__).resolve().parents[2]
 
-
-def greet(args):
-    print(f"Hello, {args.name}")
-
-
-def add_numbers(args):
-    print(args.a + args.b)
+def config_limbs(args):
+    front_left_leg = Limb(ROOT / "config.yaml", "FL_Leg")
 
 
 def main():
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers_temp = parser.add_subparsers(dest="command", required=True)
 
-    p_hello = subparsers.add_parser("hello")
-    p_hello.add_argument("name")
-    p_hello.set_defaults(func=greet)
-
-    p_add = subparsers.add_parser("add")
-    p_add.add_argument("a", type=int)
-    p_add.add_argument("b", type=int)
-    p_add.set_defaults(func=add_numbers)
+    p_add = subparsers_temp.add_parser("load_config_to_limbs")
+    p_add.set_defaults(func=config_limbs)
 
     args = parser.parse_args()
     args.func(args)

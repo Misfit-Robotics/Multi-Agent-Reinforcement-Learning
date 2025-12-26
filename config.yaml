@@ -1,0 +1,15 @@
+robot:
+  name: "Misfit01"
+  connected: False
+
+FL_Leg:
+  coax_loc: 0
+  femur_loc: 1
+  tibia_loc: 2
+  min_x: 0
+  max_x: 3
+  min_y: 0
+  max_y: 3
+  min_z: 0
+  max_z: 3
+
