@@ -1,4 +1,11 @@
-FROM ubuntu:latest
-LABEL authors="swill"
+FROM python:3.12-slim
 
-ENTRYPOINT ["top", "-b"]
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN pip install -r requirements.txt
+
+COPY . .
+
+CMD ["python", "src/Robot_Operating_System/cli.py"]
