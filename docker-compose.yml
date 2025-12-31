@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  robot_limb_controller:
+    image: swilliams17655/robot_operating_system:latest
+    pull_policy: always
+    container_name: robot_limb_controller
+    ports:
+      - "5005:5005/udp"
+    volumes:
+      - ./config.yaml:/app/config.yaml

@@ -1,11 +1,18 @@
 robot:
-  name: "Misfit01"
+  name: Misfit01
   connected: False
+  UDP_IP: 0.0.0.0
+  UDP_PORT: 5005
 
 FL_Leg:
   coax_loc: 0
   femur_loc: 1
   tibia_loc: 2
+
+  coax_length: 2.5
+  femur_length: 4.0
+  tibia_length: 4.5
+
   min_x: 0
   max_x: 3
   min_y: 0
@@ -13,3 +20,4 @@ FL_Leg:
   min_z: 0
   max_z: 3
 
+  inverse: False
