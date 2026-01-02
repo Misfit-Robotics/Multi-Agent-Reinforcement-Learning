@@ -1,11 +1,12 @@
 import argparse
 from pathlib import Path
-from limb import Limb
+from limb_controller import Limb
 
 ROOT = Path(__file__).resolve().parents[2]
 
+
 def config_limbs(args):
-    front_left_leg = Limb(ROOT / "config.yaml", "FL_Leg")
+    front_left_leg = Limb(ROOT / "config.yml", "FL_Leg")
 
 
 def main():
