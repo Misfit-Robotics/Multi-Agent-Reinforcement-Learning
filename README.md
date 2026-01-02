@@ -1,108 +1,311 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
+<h1>Robot Operating System</h1>
 
-<div align="center">
-    <img src="src/main/resources/com/visonforge/visionforge/icon_transparent.png" alt="Logo" width="50%" height="50%">
-    <p align="center">
-      An project designed to create an economic robot operating system for less than 200 dollars.
-      <br />
-      <a href="https://github.com/SWilliams17655/RobotOperatingSystem/tree/main/src/"><strong>Explore the Code»</strong></a>
-      <br />
-      <br />
-      <a href="https://github.com/SWilliams17655/RobotOperatingSystem/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
-      ·
-      <a href="https://github.com/SWilliams17655/RobotOperatingSystem/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
-    </p>
-</div>
-<br>
-<br>
-<summary>Table of Contents</summary>
-  <ol>
-    <li><a href="#about-the-project">About The Project</a></li>
-    <li><a href="#download">Download</a></li>
-    <li><a href="#contribute">Contribute</a></li>
-  </ol>
+<p>
+  A lightweight, modular robot operating system for real-time limb control, UDP-based command streaming, and
+  hardware-agnostic motion execution. This project provides a clean Python interface for controlling multi-joint
+  robotic limbs, performing inverse kinematics, and integrating external command sources such as gamepads,
+  autonomy modules, or remote controllers.
+</p>
 
-<h2 id="about-the-project">About the Project</h2>
+<hr>
 
-<p><u>Problem Statement</u>: Computer vision algorithms for object detection are powerful tools that enhance sensor capability allowing the sensor to detect object within an image as shown in Figure 1. To accomplish this, these algorithms must be trained using large datasets of pre-classified images. Developing these training sets is a time intensive process and there are few open source tools available.</p>
-<p><u>Project's Objective</u>: Create an open source tool allowing users to rapidly generate training datasets for computer vision algorithms using bounding boxes and object detection.</p>
-<br>
-<div style="display: block">
-    <img src="src/main/resources/com/visonforge/visionforge/java.png" alt="Java" style="display: block; margin: auto; width: 25%; height: 25%">
-</div>
-<br>
-<h2 id="end_result">End Result</h2>
-<p><u>Product:</u> The end product VisionForge provides is a dataset of images classified as shown below. Although this image only shows horses, the software supports multi-class datasets as well. Once complete, these datasets can be used to train a customized object detection sensor using computer vision.</p>
-<br>
-<div align="center">
-    <img src="src/main/resources/SampleImage.jpg" alt="Figure 1" style="display: block; margin: auto; width: 75%; height: 75%">
-</div>
+<h2>Features</h2>
 
-<h2 id="download">Download</h2>
-<p> VisionForge provides the user a means to rapidly develop custom computer vision datasets using bounding boxes as shown below. To download a copy of the most current VisionForge click <a href="https://github.com/SWilliams17655/VisionForge/blob/main/VisionForge.exe"> Here </a>.</p>
-<div align="center">
-    <kbd><img src="src/main/resources/Full View.jpg" alt="Figure 1" style="display: block; margin: auto; width: 100%; height: 100%; border:13px solid white;"></kbd>
-</div>
+<ul>
+  <li><strong>Modular limb controller</strong>
+    <ul>
+      <li>Coax, femur, and tibia joint control</li>
+      <li>Inverse kinematics for 3-DOF legs</li>
+      <li>Configurable servo channels and geometry</li>
+      <li>Hardware-agnostic design with optional Adafruit ServoKit integration</li>
+    </ul>
+  </li>
+  <li><strong>UDP command interface</strong>
+    <ul>
+      <li>Low-latency command streaming</li>
+      <li>Human-readable command format</li>
+      <li>Supports remote shutdown, limb movement, and future extensions</li>
+    </ul>
+  </li>
+  <li><strong>YAML-based configuration</strong>
+    <ul>
+      <li>Robot-wide settings</li>
+      <li>Per-limb geometry and servo mapping</li>
+      <li>Workspace limits for safe motion</li>
+    </ul>
+  </li>
+  <li><strong>Testable architecture</strong>
+    <ul>
+      <li>Mockable hardware interfaces</li>
+      <li>pytest-friendly message parsing</li>
+      <li>Clear separation of logic and I/O</li>
+    </ul>
+  </li>
+</ul>
 
-<h2 id="contribute"> To Contribute </h2>
+<hr>
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+<h2>System Architecture Overview</h2>
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
+<p>
+  The system is designed around a clean separation of responsibilities, enabling safe hardware interaction,
+  deterministic behavior, and straightforward testing. The architecture consists of four primary layers:
+</p>
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+<ol>
+  <li><strong>Configuration Layer</strong>
+    <br>
+    Loads robot-wide and limb-specific parameters from <code>config.yml</code>. This includes servo channels,
+    geometric lengths, workspace limits, and network settings.
+  </li>
 
-<h2 id="how_to"> How To Use </h2>
-<h3>Install</h3>
-<p>VisionForge is based on the Java Interperative Language. To use the software users must have the most current version of <a href="https://www.oracle.com/java/technologies/downloads/">Java SDK</a>.</p>
+  <li><strong>Communication Layer</strong>
+    <br>
+    A UDP listener receives commands from external sources. Messages are parsed and dispatched to the appropriate
+    limb controller. This layer is stateless and easily testable.
+  </li>
 
-<h3>Starting the program</h3>
-<p>Once downloaded, VisionForge is wrapped in a .exe file making use very simple. Double click to launch the software and you will be taken to the initial screen shown below.</p>
-<div align="center">
-    <kbd><img src="src/main/resources/Buttons.png" alt="Figure 1" style="display: block; margin: auto; width: 100%; height: 100%"></kbd>
-</div>
-<h3>Creating a new training set</h3>
-<p>The structure of the training folder is shown below. A .json contains all the bounding boxes; whereas, a sub-folder contains all the training images. Currently the software only support JPEG. Other formats will be added later. If you would prefer to download a empty file folder the first time, it can be downloaded from this link.</p>
-<div align="center">
-    <img src="src/main/resources/Load%20File.jpg" alt="Figure 1" style="display: block; margin: auto; width: 75%; height: 75%">
-</div>
-<p>Looking at the .json you will see a format that includes the LABELS. These labels represent a list of the objects that will be in your images. For example; horses, cars, people, etc. Edit this label to include all the objects your training dataset will be expected to classify. Once you load your initial JSON, this list will populate so you can classify images.</p>
+  <li><strong>Limb Control Layer</strong>
+    <br>
+    Each limb is represented by a <code>Limb</code> object responsible for:
+    <ul>
+      <li>Inverse kinematics calculations</li>
+      <li>Servo angle computation</li>
+      <li>Workspace clamping and safety enforcement</li>
+      <li>Hardware output (when connected)</li>
+    </ul>
+  </li>
 
-```
-{"LABELS":["Horse"],
-"FEATURES":
-    [{"TYPE_ID":1,
-    "IMAGE_ID":"DSC_0245.JPG",
-    "BBOX":[2024,2375,3024,3367]},
-    
-    {"TYPE_ID":1,
-    "IMAGE_ID":"DSC_0245.JPG",
-    "BBOX":[3704,2079,4664,3304]}
-    ]}
-```
+  <li><strong>Hardware Abstraction Layer</strong>
+    <br>
+    Provides a unified interface to servo hardware. When <code>connected = false</code>, all hardware calls are
+    replaced with logging, enabling full simulation and testing without physical devices.
+  </li>
+</ol>
 
-<p>With the training folder created, you can now go back to the VisionForge software and click the Load button. Navigate to your JSON and select it. From there your training dataset will load.</p>
+<p>
+  This layered approach ensures that motion logic, communication, and hardware access remain independent,
+  maintainable, and robust.
+</p>
 
-<h3>Labeling Data</h3>
-<p>VisionForge uses BoundingBoxes to label image. Start by selecting your image in the image box. This will open your image on the right side.
-Resize the image as required.</p>
+<hr>
 
-<p>Find the object you would like to classify and click in the upper left side dragging the bounding box to the lower right.</p>
-<div align="center">
-    <img src="src/main/resources/selectingobject.jpg" alt="Figure 1" style="display: block; margin: auto; width: 100%; height: 100%">
-</div>
+<h2>Limb Controller Mathematics</h2>
 
-<p>Select the object classification from the dropdown (Figure 2, Number 6).</p>
-<p>Click save (Figure 2, Number 5). Each time save is clicked the dataset JSON is updated.</p>
+<p>
+  Each limb is modeled as a 3-DOF kinematic chain consisting of:
+</p>
 
-<h3>Deleting Classification</h3>
-<p>If an object is not correctly marked, a user can select it from the list on the left then click the delete button. (Figure 2, Number 2)</p>
+<ul>
+  <li><strong>Coax joint</strong> – horizontal rotation (yaw)</li>
+  <li><strong>Femur joint</strong> – vertical rotation (pitch)</li>
+  <li><strong>Tibia joint</strong> – knee extension</li>
+</ul>
 
-<h3>Updating Classification</h3>
-<p>If an object is incorrectly classified, the user can select it from teh list on the left (Figure 2, Number 6) then change the object classification in the drop-down (Figure 2, Number 4).
-Finally, click the update button. (Figure 2, Number 5)</p>
+<p>
+  The limb controller computes joint angles from a target Cartesian position <code>(x, y, z)</code> using classical
+  trigonometric inverse kinematics.
+</p>
+
+<h3>1. Horizontal Shoulder Angle (HSA)</h3>
+
+<p>
+  The coax joint rotates the limb around the vertical axis. The horizontal distance <code>h</code> is computed as:
+</p>
+
+<pre><code>h = sqrt(x² + y²)</code></pre>
+
+<p>
+  The coax angle is then:
+</p>
+
+<pre><code>HSA = atan(x / y)</code></pre>
+
+<p>
+  Additional adjustments are applied for mirrored limbs using the <code>inverse</code> flag.
+</p>
+
+<h3>2. Tibia Angle (TSA)</h3>
+
+<p>
+  The tibia angle is computed using the law of cosines. The distance from the shoulder to the foot is:
+</p>
+
+<pre><code>l = sqrt(h² + z²)</code></pre>
+
+<p>
+  Then:
+</p>
+
+<pre><code>TSA = acos((tibia² + femur² - l²) / (2 * tibia * femur))</code></pre>
+
+<p>
+  Calibration offsets and safety limits are applied to ensure the servo remains within its mechanical range.
+</p>
+
+<h3>3. Femur Angle (FSA)</h3>
+
+<p>
+  The femur angle is the sum of two components:
+</p>
+
+<ul>
+  <li><strong>va</strong> – angle between the horizontal projection and the vertical axis</li>
+  <li><strong>vb</strong> – interior angle from the law of cosines</li>
+</ul>
+
+<pre><code>va = atan((h - coax_length) / z)
+vb = acos((l² + femur² - tibia²) / (2 * l * femur))
+FSA = va + vb
+</code></pre>
+
+<p>
+  The final servo command is adjusted to match the physical orientation of the femur servo horn.
+</p>
+
+<p>
+  These calculations allow the limb to reach any valid point within its configured workspace while maintaining
+  smooth, predictable motion.
+</p>
+
+<hr>
+
+<h2>Project Structure</h2>
+
+<pre>
+robot_os/
+│
+├── limb_controller.py       # Limb class with IK and servo control
+├── main.py                  # UDP command listener and dispatcher
+├── config.yml               # Robot and limb configuration
+├── tests/                   # pytest suite
+│   ├── test_limb.py
+│   └── test_message_handler.py
+└── README.md
+</pre>
+
+<hr>
+
+<h2>Installation</h2>
+
+<h3>1. Clone the repository</h3>
+
+<pre><code>git clone https://github.com/SWilliams17655/RobotOperatingSystem.git
+cd robot-operating-system
+</code></pre>
+
+<h3>2. Install dependencies</h3>
+
+<pre><code>pip install -r requirements.txt
+</code></pre>
+
+<p>If you are using real hardware with a PCA9685-based servo controller:</p>
+
+<pre><code>pip install adafruit-circuitpython-servokit
+</code></pre>
+
+<hr>
+
+<h2>Configuration</h2>
+
+<p>
+  All robot parameters are stored in <code>config.yml</code>. This includes robot-level settings, network parameters, and
+  per-limb geometry and servo configuration.
+</p>
+
+<p>Example configuration:</p>
+
+<pre><code>robot:
+  name: "Hexapod"
+  connected: true
+  UDP_IP: "0.0.0.0"
+  UDP_PORT: 5005
+
+BR_Leg:
+  coax_loc: 0
+  femur_loc: 1
+  tibia_loc: 2
+  coax_length: 40
+  femur_length: 60
+  tibia_length: 80
+  min_x: -50
+  max_x: 50
+  min_y: -50
+  max_y: 50
+  min_z: -80
+  max_z: -10
+  inverse: false
+</code></pre>
+
+<hr>
+
+<h2>Usage</h2>
+
+<h3>Start the robot controller</h3>
+
+<pre><code>python main.py
+</code></pre>
+
+<p>
+  On startup, the controller will:
+</p>
+
+<ul>
+  <li>Load configuration values from <code>config.yml</code></li>
+  <li>Initialize servos if <code>connected</code> is set to <code>true</code></li>
+  <li>Bind to the configured UDP IP and port</li>
+  <li>Listen for incoming command messages</li>
+</ul>
+
+<hr>
+
+<h2>UDP Command Format</h2>
+
+<p>
+  Commands are sent as comma-separated strings over UDP to the configured IP address and port.
+</p>
+
+<h3>Move a limb</h3>
+
+<pre><code>move_limb,BR_Leg,10,20,30
+</code></pre>
+
+<h3>Shutdown the system</h3>
+
+<pre><code>shutdown
+</code></pre>
+
+<hr>
+
+<h2>Testing</h2>
+
+<pre><code>pytest -v
+</code></pre>
+
+<hr>
+
+<h2>Development Roadmap</h2>
+
+<ul>
+  <li>[ ] Gait engine for multi-limb coordination</li>
+  <li>[ ] Higher-level motion primitives (step, walk, turn)</li>
+  <li>[ ] WebSocket or HTTP control interface</li>
+  <li>[ ] Simulation mode with no hardware dependencies</li>
+</ul>
+
+<hr>
+
+<hr>
+
+<h2>License</h2>
+
+
+<hr>
+
+<h2>About</h2>
+
+<p>
+  This robot operating system is intended to provide a clear, extensible, and maintainable foundation for hobby
+  robotics, research platforms, and custom autonomous systems. It emphasizes readability, testability, and safe
+  operation around hardware.
+</p>
