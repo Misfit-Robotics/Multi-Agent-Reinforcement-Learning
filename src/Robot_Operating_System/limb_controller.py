@@ -1,7 +1,6 @@
 import yaml
 import math
 import logging
-import sys
 import socket
 import time
 
@@ -9,7 +8,9 @@ import time
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s    %(levelname)s    %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
+    handlers=[
+        logging.FileHandler("limb_controller.log", mode="a"),
+    ],
 )
 
 
@@ -84,7 +85,7 @@ class Limb:
         self.TSA_target = 0
 
     # **********************************************************************************************************************
-    def reposition_leg(self, x, y, z):
+    def move_limb(self, x, y, z):
         """
         Move the limb to a target (x, y, z) position using inverse kinematics.
 
@@ -141,12 +142,13 @@ class Limb:
         self.HSA_target = math.degrees(math.atan(x / y))
         if self.inverse:
             self.HSA_target = 90 - abs(self.HSA_target)
+
+        logging.info(f"Coax Angle: {self.HSA_target}")
         if self.connected:
             self.controller_kit.servo[self.coax].angle = self.HSA_target * 2
-        else:
-            logging.info(f"Coax Angle: {self.HSA_target}")
 
-        l = math.sqrt(math.pow(h, 2) + math.pow(z, 2))
+        # Calculates to tibia angle.
+        l = math.sqrt(math.pow(h - self.coax_length, 2) + math.pow(z, 2))
         tsa = math.acos(
             (
                 math.pow(self.tibia_length, 2)
@@ -156,18 +158,12 @@ class Limb:
             / (2 * self.tibia_length * self.femur_length)
         )
         self.TSA_target = math.degrees(tsa)
-        if self.TSA_target < 15:
-            self.TSA_target = 15
-            logging.warning("Tibia Unable to Reach")
-        if self.TSA_target > 180:
-            self.TSA_target = 180
-            logging.warning("Tibia Unable to Reach")
 
+        logging.info(f"Tibia Angle: {self.TSA_target}")
         if self.connected:
             self.controller_kit.servo[self.tibia].angle = self.TSA_target
-        else:
-            logging.info(f"Tibia Angle: {self.TSA_target}")
 
+        # Calculates to femur angle.
         vb = math.acos(
             (
                 math.pow(l, 2)
@@ -180,13 +176,12 @@ class Limb:
         femur_angle = vb + va
         self.FSA_target = math.degrees(femur_angle)
 
+        logging.info(f"Femur Angle: {self.FSA_target}")
         if self.connected:
             self.controller_kit.servo[self.femur].angle = 2 * (90 - self.FSA_target)
-        else:
-            logging.info(f"Femur Angle: {self.FSA_target}")
 
     # **********************************************************************************************************************
-    def cycle_joint(self, joint, angle):
+    def move_joint(self, joint, angle):
         """
         Move a single joint to a specified angle for testing or calibration.
 
@@ -210,23 +205,26 @@ class Limb:
 
         if joint == "coax":
             logging.info(f"Cycling coax to {angle}")
-            self.controller_kit.servo[self.coax].angle = angle
+            if self.connected:
+                self.controller_kit.servo[self.coax].angle = angle
         elif joint == "tibia":
             logging.info(f"Cycling tibia to {angle}")
-            self.controller_kit.servo[self.tibia].angle = angle
+            if self.connected:
+                self.controller_kit.servo[self.tibia].angle = angle
         elif joint == "femur":
             logging.info(f"Cycling femur to {angle}")
-            self.controller_kit.servo[self.femur].angle = angle
+            if self.connected:
+                self.controller_kit.servo[self.femur].angle = angle
         else:
             logging.info(f"No matching joint identified for {joint}")
 
 
 # **********************************************************************************************************************
-def main():
+def limb_controller():
     udp_ip = None
     udp_port = None
 
-    config_path = "config.yml"  # The config file that will be used to load parameters.
+    config_path = "limb_controller_config.yml"  # The config file that will be used to load parameters.
 
     # Loading the IP and traffic information from the config file.
     logging.info(f"Loading config file from: {config_path}")
@@ -236,9 +234,14 @@ def main():
         udp_port = config["robot"]["UDP_PORT"]
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((udp_ip, udp_port))
-    logging.info(f"Controller is listening for UDP packets on {udp_ip}:{udp_port}")
+    logging.info(f"Limb controller is listening for UDP packets on {udp_ip}:{udp_port}")
 
-    front_left_limb = Limb(config_path, "BR_Leg")
+    limbs = {
+        limb_name: Limb(config_path, limb_name)
+        for limb_name in config.keys()
+        if limb_name != "robot"
+    }
+    logging.info(f"Loading limbs: {limbs}")
 
     while True:
         data, addr = sock.recvfrom(1024)
@@ -246,18 +249,30 @@ def main():
         logging.info(message)
         try:
             if message.startswith("shutdown"):
-                logging.info("Restarting leg controller")
+                logging.info("Shutting down leg controller")
                 return
 
             else:
                 command_list = message.split(",")
                 if command_list[0] == "move_limb":
-                    if command_list[1] == front_left_limb.limb_name:
-                        front_left_limb.reposition_leg(
+                    target_limb = command_list[1]
+                    if target_limb in limbs:
+                        limbs[target_limb].move_limb(
                             int(command_list[2]),
                             int(command_list[3]),
                             int(command_list[4]),
                         )
+
+                    else:
+                        logging.info(f"No leg matched that name: {command_list[1]}")
+
+                if command_list[0] == "move_joint":
+                    target_limb = command_list[1]
+                    if target_limb in limbs:
+                        limbs[target_limb].move_joint(
+                            command_list[2], int(command_list[3])
+                        )
+
                     else:
                         logging.info(f"No leg matched that name: {command_list[1]}")
 
@@ -268,4 +283,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    limb_controller()
