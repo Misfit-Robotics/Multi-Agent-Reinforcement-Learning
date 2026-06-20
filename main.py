@@ -164,7 +164,7 @@ def _plot_combined_reward_history(
         ax_overall.text(0.5, 0.5, "No overall reward data", ha="center", va="center", transform=ax_overall.transAxes)
 
     ax_overall.legend()
-    ax_overall.set_title("Overall Reward Over Episodes", fontsize=6, loc="left")
+    #ax_overall.set_title("Overall Reward Over Episodes", fontsize=6, loc="left")
     ax_overall.set_ylabel("Reward")
     ax_overall.grid(alpha=0.3)
 
@@ -187,7 +187,7 @@ def _plot_combined_reward_history(
     else:
         ax_loss.text(0.5, 0.5, "No loss data", ha="center", va="center", transform=ax_loss.transAxes)
 
-    ax_loss.set_title("Training Loss Over Episodes", fontsize=6, loc="left")
+    #ax_loss.set_title("Training Loss Over Episodes", fontsize=6, loc="left")
     ax_loss.set_ylabel("Loss")
     ax_loss.grid(alpha=0.3)
 
@@ -216,7 +216,7 @@ def _plot_combined_reward_history(
     else:
         ax_agents.text(0.5, 0.5, "No per-agent reward data", ha="center", va="center", transform=ax_agents.transAxes)
 
-    ax_agents.set_title("Per-Agent Reward Over Episodes", fontsize=6, loc="left")
+    #ax_agents.set_title("Per-Agent Reward Over Episodes", fontsize=6, loc="left")
     ax_agents.set_ylabel("Reward")
     ax_agents.grid(alpha=0.3)
 
@@ -239,7 +239,7 @@ def _plot_combined_reward_history(
     else:
         ax_metric.text(0.5, 0.5, f"No {metric_label.lower()} data", ha="center", va="center", transform=ax_metric.transAxes)
 
-    ax_metric.set_title(f"{metric_label} Over Episodes", fontsize=6, loc="left")
+    #ax_metric.set_title(f"{metric_label} Over Episodes", fontsize=6, loc="left")
     ax_metric.set_xlabel("Episode")
     ax_metric.set_ylabel(metric_label)
     ax_metric.grid(alpha=0.3)
