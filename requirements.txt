@@ -1,0 +1,9 @@
+# Use CUDA 12.1 PyTorch wheel on Windows (requires compatible NVIDIA driver/GPU).
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch==2.5.1+cu121 ; platform_system == "Windows"
+torch==2.5.1 ; platform_system != "Windows"
+matplotlib
+perlin_noise
+pettingzoo
+gymnasium
+pygame>=2.5.2
