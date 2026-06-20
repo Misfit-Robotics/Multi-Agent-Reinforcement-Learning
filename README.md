@@ -1,49 +1,95 @@
-# ReinforcePolicy Documentation
+# 🏹 Knights, Archers, Zombies (KAZ) Multi-Agent RL Training Framework
 
-The `ReinforcePolicy` class implements a clean, production-ready version of the classic **REINFORCE (Policy Gradient)** algorithm with an **entropy bonus** for exploration and **advantage normalization** for training stability. It is built using PyTorch and accommodates discrete action spaces.
-
----
-
-## 1. Overview
-REINFORCE is a model-free, policy-gradient method in Reinforcement Learning. It directly updates a neural network policy based on the total discounted return accumulated across an entire episode (Monte Carlo sampling). 
-
-This implementation includes two vital modern stability enhancements:
-1. **Advantage Tracking & Normalization:** Subtracts the mean return and divides by the standard deviation across the episode trajectory to reduce policy variance.
-2. **Entropy Regularization:** Introduces an entropy bonus ($H(\pi)$) to the objective function, preventing the policy from collapsing prematurely into deterministic actions and encouraging early-stage exploration.
+This repository provides an interactive multi-agent reinforcement learning (MARL) training orchestration pipeline. It utilizes [PettingZoo's Butterfly library](https://pettingzoo.farama.org/environments/butterfly/knights_archers_zombies/) to simulate the **Knights, Archers, Zombies (v10)** parallel environment, allowing you to train multi-agent groups using value-based or policy-gradient approaches.
 
 ---
 
-## 2. Mathematical Foundation
+## 🗺️ System Overview
 
-The loss function optimized during the `learn()` phase combines the policy gradient loss and an exploration-promoting entropy term:
+The framework orchestrates decentralized training with centralized execution hooks across custom reinforcement learning agents:
+* **DQN (`DQN_Logic`):** Deep Q-Network with Experience Replay buffers and decoupled Target Networks.
+* **PG (`ReinforcePolicy`):** REINFORCE Policy Gradient with baseline-subtracted advantage normalization and explicit exploration tracking via entropy.
 
-$$L = L_{\text{policy}} - \beta \cdot L_{\text{entropy}}$$
-
-### Policy Loss
-The policy gradient loss utilizes baseline-subtracted and normalized returns (advantages, $A_t$) calculated across an episode trajectory of length $T$:
-
-$$L_{\text{policy}} = - \sum_{t=1}^{T} \log \pi_\theta(a_t | s_t) \cdot A_t$$
-
-Where the normalized advantage $A_t$ for a discounted return $G_t = \sum_{k=t}^{T} \gamma^{k-t} R_k$ is computed as:
-
-$$A_t = \frac{G_t - \mu_G}{\sigma_G + \epsilon}$$
-
-### Entropy Bonus
-To sustain exploration, the categorical distribution entropy is maximized (subtracted from loss, scaled by $\beta$ / `entropy_coef`):
-
-$$L_{\text{entropy}} = \sum_{t=1}^{T} H\left(\pi_\theta(\cdot | s_t)\right)$$
+### Architecture Workflow
+1. **Instantiation:** Detects baseline environment dimensions (`state_size`, `action_space`) per agent dynamically.
+2. **Interactive Handshake:** Prompts the user to select the algorithm type, deployment settings, runtime hyperparameters, and headless states.
+3. **Training Loop:** Executes decentralized operations, tracking individual metrics inside parallelized environment steps.
+4. **Data Aggregation:** Automatically serializes weights, exports historical tables (.CSV), and builds trend plots (.PNG) upon completion or cancellation.
 
 ---
 
-## 3. API Reference & Parameters
+## 🛠️ Script Features & API Core Functions
 
-### Initialization Matrix
-| Parameter / Method | Type / Signature | Default / Return | Description |
+| Function / Method | Type / Signature | Return Profile | Description |
 | :--- | :--- | :--- | :--- |
-| `state_size` | `int` | *Required* | Dimensionality of the incoming observation space. |
-| `action_space` | `int` | *Required* | Total number of discrete actions available. |
-| `learning_rate` | `float` | `0.001` | Learning rate parameter for the Adam optimizer. |
-| `gamma` | `float` | `0.99` | Discount factor ($\gamma$) for future tracking rewards. |
-| `hidden_layer_sizes` | `list` | `[64, 64]` | Architecture array representing sequential fully-connected layers. |
-| `entropy_coef` | `float` | `0.01` | Scaling factor ($\beta$) balancing exploration vs. exploitation. |
+| `run_DQN(...)` | Core Loop | `None` | Manages the primary interactive step loop using Deep Q-Learning rules, handling epsilon decay steps globally. |
+| `run_PG(...)` | Core Loop | `None` | Manages the single-trajectory Monte Carlo collection loop using Policy Gradient criteria, stepping updates at episode boundaries. |
 | `get_action(state)` | Method | `int` | Samples an action from the policy using the current observation context. |
+| `_plot_combined_reward_history(...)` | Utility | `None` | Uses Matplotlib to generate a 4-panel grid tracking Overall Reward, Losses, Per-Agent Profiles, and Exploitation Metrics. |
+| `_export_training_history_csv(...)` | Utility | `None` | Compiles raw metric data arrays directly into structured tables for post-process evaluation. |
+| `_load_agent_checkpoints(...)` | Disk I/O | `None` | Restores neural network states relative to specific agent name indexes. |
+| `_save_agent_checkpoints(...)` | Disk I/O | `None` | Handles state serialization dynamically across unique sub-directories. |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+Ensure you have your custom `DQN.py` (housing `DQN_Logic`) and `PG.py` (housing `ReinforcePolicy`) within the execution path. Install dependencies:
+
+```bash
+pip install torch numpy matplotlib pettingzoo[butterfly]
+
+```
+
+### Execution Pipeline
+
+Launch the main orchestration script from your terminal:
+
+```bash
+python main.py
+
+```
+
+Upon launching, the interactive CLI will guide you through setup configuration profiles:
+
+```text
+Select algorithm [dqn/pg] (default dqn): dqn
+
+Load saved model on start? [y/N]: n
+
+Enter number of episodes (default 200): 150
+
+Run headless? [Y/n]: y
+
+Verbose printing? [y/N]: n
+
+Set initial epsilon for DQN (default 1.0): 1.0
+
+```
+
+---
+
+## 📊 Analytics & Training Outputs
+
+When training concludes (or if interrupted by a `KeyboardInterrupt` / `Ctrl+C`), the system executes a graceful shutdown routine to prevent data loss. The following artifacts are written to your local working directory:
+
+### 1. File Artifact Generation Matrix
+
+* **`checkpoints/`**: A directory containing independent PyTorch state modules separated by naming metrics (e.g., `dqn_archer_0.pt`, `dqn_knight_0.pt`).
+* **`training_history_[algo]_[timestamp].csv`**: Tabular dataset detailing overall reward histories, mean step-level losses, and per-agent returns across each episode index.
+* **`reward_history_[algo]_[timestamp].png`**: High-resolution 4-subplot visualization displaying moving window metrics.
+
+### 2. Output Panel Breakdown
+
+The generated graph provides a vertical overview tracking:
+
+* **Overall Reward:** Aggregated group returns alongside an $N$-episode rolling average trend line.
+* **Training Loss:** Mean optimization costs highlighting model convergence or gradient spikes.
+* **Per-Agent Rewards:** Individual returns tracking behavioral discrepancies between sub-classes (e.g., *Knights* vs. *Archers*).
+* **Algorithmic Metric Tracking:** Dynamic tracking mapping parameter transitions over time (**Epsilon** for DQN loops or **Entropy** for PG environments).
+
+```
+
+```
