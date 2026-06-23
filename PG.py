@@ -15,7 +15,7 @@ class ReinforcePolicy:
         self.hidden_layer_sizes = tuple(int(h) for h in hidden_layer_sizes)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        # Build policy network
+        # Build policy network to output logits, not probabilites yet 
         layers = []
         input_size = self.state_size
         for h in self.hidden_layer_sizes:
@@ -29,8 +29,8 @@ class ReinforcePolicy:
 
         # Storage for one episode
         self.log_probs = []
-        self.entropies = []
-        self.rewards = []
+        self.entropies = [] # entropy bonus for exploration
+        self.rewards = [] # rewards for this episode
         self.last_entropy_mean = 0.0
 
     #*********************************************************************************#
@@ -45,8 +45,8 @@ class ReinforcePolicy:
         state: np.ndarray of shape (state_size,)
         """
         
-        state_vec = self._flatten_state(state)
-
+        # Ensure state is a 1D vector of floats and convret to tensor
+        state_vec = self._flatten_state(state) 
         state_tensor = torch.as_tensor(
             np.expand_dims(state_vec, axis=0),
             device=self.device,
@@ -56,16 +56,17 @@ class ReinforcePolicy:
         # Forward pass with gradients enabled for proper backprop
         self.policy.eval()
         logits = self.policy(state_tensor)
-
-        # Construct from logits for numerical stability.
         dist = torch.distributions.Categorical(logits=logits)
+
+        # Samples action based on categorical distribution defined by logits for stochastic policy
         action = dist.sample()
+
+        # Computes log-prob and entropy for this action
         log_prob = dist.log_prob(action)  
         entropy = dist.entropy()
-
-        # Store log_prob for this time step
         self.log_probs.append(log_prob)
         self.entropies.append(entropy)
+
         return int(action.item())
 
     #*********************************************************************************#
@@ -75,7 +76,7 @@ class ReinforcePolicy:
 
     #*********************************************************************************#
     def _compute_returns(self):
-        """Compute discounted returns G_t for each time step."""
+        """Compute discounted returns G_t Monte Carlo style from rewards collected in this episode."""
         returns = []
         G = 0.0
         for r in reversed(self.rewards):
@@ -96,12 +97,18 @@ class ReinforcePolicy:
             self.last_entropy_mean = 0.0
             return False, 0.0
 
+        # Computes G(t) for each time step in the episode
         returns = self._compute_returns()
+
+        # Advantage: Normalizes returns for better training stability used in baseline REINFORCE preventing 
+        # large reward swings from destabilizing learning.
         advantages = returns - returns.mean()
         advantages = advantages / (advantages.std(unbiased=False) + 1e-8)
 
         self.policy.train()
 
+        # Entropy Bonus: Encourages exploration by adding a term to the loss that rewards higher entropy 
+        # (more randomness) in the action distribution helping prevent premature convergence.
         log_probs_tensor = torch.stack(self.log_probs)
         entropy_tensor = torch.stack(self.entropies)
         self.last_entropy_mean = float(entropy_tensor.mean().detach().item())
@@ -112,7 +119,8 @@ class ReinforcePolicy:
         self.optimizer.zero_grad()
         loss.backward()
         
-        # Clip gradients for stability
+        # Gradient clipping: Prevents exploding gradients by scaling down large gradients 
+        # to a maximum norm improving training stability. especially in reinforcement learning where reward signals can be noisy and lead to large updates.
         torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=1.0)
         
         self.optimizer.step()
