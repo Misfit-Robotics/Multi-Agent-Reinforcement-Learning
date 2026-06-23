@@ -1,311 +1,95 @@
-<h1>Robot Operating System</h1>
-
-<p>
-  A lightweight, modular robot operating system for real-time limb control, UDP-based command streaming, and
-  hardware-agnostic motion execution. This project provides a clean Python interface for controlling multi-joint
-  robotic limbs, performing inverse kinematics, and integrating external command sources such as gamepads,
-  autonomy modules, or remote controllers.
-</p>
-
-<hr>
-
-<h2>Features</h2>
-
-<ul>
-  <li><strong>Modular limb controller</strong>
-    <ul>
-      <li>Coax, femur, and tibia joint control</li>
-      <li>Inverse kinematics for 3-DOF legs</li>
-      <li>Configurable servo channels and geometry</li>
-      <li>Hardware-agnostic design with optional Adafruit ServoKit integration</li>
-    </ul>
-  </li>
-  <li><strong>UDP command interface</strong>
-    <ul>
-      <li>Low-latency command streaming</li>
-      <li>Human-readable command format</li>
-      <li>Supports remote shutdown, limb movement, and future extensions</li>
-    </ul>
-  </li>
-  <li><strong>YAML-based configuration</strong>
-    <ul>
-      <li>Robot-wide settings</li>
-      <li>Per-limb geometry and servo mapping</li>
-      <li>Workspace limits for safe motion</li>
-    </ul>
-  </li>
-  <li><strong>Testable architecture</strong>
-    <ul>
-      <li>Mockable hardware interfaces</li>
-      <li>pytest-friendly message parsing</li>
-      <li>Clear separation of logic and I/O</li>
-    </ul>
-  </li>
-</ul>
-
-<hr>
-
-<h2>System Architecture Overview</h2>
-
-<p>
-  The system is designed around a clean separation of responsibilities, enabling safe hardware interaction,
-  deterministic behavior, and straightforward testing. The architecture consists of four primary layers:
-</p>
-
-<ol>
-  <li><strong>Configuration Layer</strong>
-    <br>
-    Loads robot-wide and limb-specific parameters from <code>config.yml</code>. This includes servo channels,
-    geometric lengths, workspace limits, and network settings.
-  </li>
-
-  <li><strong>Communication Layer</strong>
-    <br>
-    A UDP listener receives commands from external sources. Messages are parsed and dispatched to the appropriate
-    limb controller. This layer is stateless and easily testable.
-  </li>
-
-  <li><strong>Limb Control Layer</strong>
-    <br>
-    Each limb is represented by a <code>Limb</code> object responsible for:
-    <ul>
-      <li>Inverse kinematics calculations</li>
-      <li>Servo angle computation</li>
-      <li>Workspace clamping and safety enforcement</li>
-      <li>Hardware output (when connected)</li>
-    </ul>
-  </li>
-
-  <li><strong>Hardware Abstraction Layer</strong>
-    <br>
-    Provides a unified interface to servo hardware. When <code>connected = false</code>, all hardware calls are
-    replaced with logging, enabling full simulation and testing without physical devices.
-  </li>
-</ol>
-
-<p>
-  This layered approach ensures that motion logic, communication, and hardware access remain independent,
-  maintainable, and robust.
-</p>
-
-<hr>
-
-<h2>Limb Controller Mathematics</h2>
-
-<p>
-  Each limb is modeled as a 3-DOF kinematic chain consisting of:
-</p>
-
-<ul>
-  <li><strong>Coax joint</strong> – horizontal rotation (yaw)</li>
-  <li><strong>Femur joint</strong> – vertical rotation (pitch)</li>
-  <li><strong>Tibia joint</strong> – knee extension</li>
-</ul>
+# 🏹 Knights, Archers, Zombies (KAZ) Multi-Agent RL Training Framework
 
-<p>
-  The limb controller computes joint angles from a target Cartesian position <code>(x, y, z)</code> using classical
-  trigonometric inverse kinematics.
-</p>
+This repository provides an interactive multi-agent reinforcement learning (MARL) training orchestration pipeline. It utilizes [PettingZoo's Butterfly library](https://pettingzoo.farama.org/environments/butterfly/knights_archers_zombies/) to simulate the **Knights, Archers, Zombies (v10)** parallel environment, allowing you to train multi-agent groups using value-based or policy-gradient approaches.
 
-<h3>1. Horizontal Shoulder Angle (HSA)</h3>
+---
 
-<p>
-  The coax joint rotates the limb around the vertical axis. The horizontal distance <code>h</code> is computed as:
-</p>
+## 🗺️ System Overview
 
-<pre><code>h = sqrt(x² + y²)</code></pre>
+The framework orchestrates decentralized training with centralized execution hooks across custom reinforcement learning agents:
+* **DQN (`DQN_Logic`):** Deep Q-Network with Experience Replay buffers and decoupled Target Networks.
+* **PG (`ReinforcePolicy`):** REINFORCE Policy Gradient with baseline-subtracted advantage normalization and explicit exploration tracking via entropy.
 
-<p>
-  The coax angle is then:
-</p>
+### Architecture Workflow
+1. **Instantiation:** Detects baseline environment dimensions (`state_size`, `action_space`) per agent dynamically.
+2. **Interactive Handshake:** Prompts the user to select the algorithm type, deployment settings, runtime hyperparameters, and headless states.
+3. **Training Loop:** Executes decentralized operations, tracking individual metrics inside parallelized environment steps.
+4. **Data Aggregation:** Automatically serializes weights, exports historical tables (.CSV), and builds trend plots (.PNG) upon completion or cancellation.
 
-<pre><code>HSA = atan(x / y)</code></pre>
+---
 
-<p>
-  Additional adjustments are applied for mirrored limbs using the <code>inverse</code> flag.
-</p>
+## 🛠️ Script Features & API Core Functions
 
-<h3>2. Tibia Angle (TSA)</h3>
+| Function / Method | Type / Signature | Return Profile | Description |
+| :--- | :--- | :--- | :--- |
+| `run_DQN(...)` | Core Loop | `None` | Manages the primary interactive step loop using Deep Q-Learning rules, handling epsilon decay steps globally. |
+| `run_PG(...)` | Core Loop | `None` | Manages the single-trajectory Monte Carlo collection loop using Policy Gradient criteria, stepping updates at episode boundaries. |
+| `get_action(state)` | Method | `int` | Samples an action from the policy using the current observation context. |
+| `_plot_combined_reward_history(...)` | Utility | `None` | Uses Matplotlib to generate a 4-panel grid tracking Overall Reward, Losses, Per-Agent Profiles, and Exploitation Metrics. |
+| `_export_training_history_csv(...)` | Utility | `None` | Compiles raw metric data arrays directly into structured tables for post-process evaluation. |
+| `_load_agent_checkpoints(...)` | Disk I/O | `None` | Restores neural network states relative to specific agent name indexes. |
+| `_save_agent_checkpoints(...)` | Disk I/O | `None` | Handles state serialization dynamically across unique sub-directories. |
 
-<p>
-  The tibia angle is computed using the law of cosines. The distance from the shoulder to the foot is:
-</p>
+---
 
-<pre><code>l = sqrt(h² + z²)</code></pre>
+## 🚀 Getting Started
 
-<p>
-  Then:
-</p>
+### Prerequisites
 
-<pre><code>TSA = acos((tibia² + femur² - l²) / (2 * tibia * femur))</code></pre>
+Ensure you have your custom `DQN.py` (housing `DQN_Logic`) and `PG.py` (housing `ReinforcePolicy`) within the execution path. Install dependencies:
 
-<p>
-  Calibration offsets and safety limits are applied to ensure the servo remains within its mechanical range.
-</p>
+```bash
+pip install torch numpy matplotlib pettingzoo[butterfly]
 
-<h3>3. Femur Angle (FSA)</h3>
+```
 
-<p>
-  The femur angle is the sum of two components:
-</p>
+### Execution Pipeline
 
-<ul>
-  <li><strong>va</strong> – angle between the horizontal projection and the vertical axis</li>
-  <li><strong>vb</strong> – interior angle from the law of cosines</li>
-</ul>
+Launch the main orchestration script from your terminal:
 
-<pre><code>va = atan((h - coax_length) / z)
-vb = acos((l² + femur² - tibia²) / (2 * l * femur))
-FSA = va + vb
-</code></pre>
+```bash
+python main.py
 
-<p>
-  The final servo command is adjusted to match the physical orientation of the femur servo horn.
-</p>
+```
 
-<p>
-  These calculations allow the limb to reach any valid point within its configured workspace while maintaining
-  smooth, predictable motion.
-</p>
+Upon launching, the interactive CLI will guide you through setup configuration profiles:
 
-<hr>
+```text
+Select algorithm [dqn/pg] (default dqn): dqn
 
-<h2>Project Structure</h2>
+Load saved model on start? [y/N]: n
 
-<pre>
-robot_os/
-│
-├── limb_controller.py       # Limb class with IK and servo control
-├── main.py                  # UDP command listener and dispatcher
-├── config.yml               # Robot and limb configuration
-├── tests/                   # pytest suite
-│   ├── test_limb.py
-│   └── test_message_handler.py
-└── README.md
-</pre>
+Enter number of episodes (default 200): 150
 
-<hr>
+Run headless? [Y/n]: y
 
-<h2>Installation</h2>
+Verbose printing? [y/N]: n
 
-<h3>1. Clone the repository</h3>
+Set initial epsilon for DQN (default 1.0): 1.0
 
-<pre><code>git clone https://github.com/SWilliams17655/RobotOperatingSystem.git
-cd robot-operating-system
-</code></pre>
+```
 
-<h3>2. Install dependencies</h3>
+---
 
-<pre><code>pip install -r requirements.txt
-</code></pre>
+## 📊 Analytics & Training Outputs
 
-<p>If you are using real hardware with a PCA9685-based servo controller:</p>
+When training concludes (or if interrupted by a `KeyboardInterrupt` / `Ctrl+C`), the system executes a graceful shutdown routine to prevent data loss. The following artifacts are written to your local working directory:
 
-<pre><code>pip install adafruit-circuitpython-servokit
-</code></pre>
+### 1. File Artifact Generation Matrix
 
-<hr>
+* **`checkpoints/`**: A directory containing independent PyTorch state modules separated by naming metrics (e.g., `dqn_archer_0.pt`, `dqn_knight_0.pt`).
+* **`training_history_[algo]_[timestamp].csv`**: Tabular dataset detailing overall reward histories, mean step-level losses, and per-agent returns across each episode index.
+* **`reward_history_[algo]_[timestamp].png`**: High-resolution 4-subplot visualization displaying moving window metrics.
 
-<h2>Configuration</h2>
+### 2. Output Panel Breakdown
 
-<p>
-  All robot parameters are stored in <code>config.yml</code>. This includes robot-level settings, network parameters, and
-  per-limb geometry and servo configuration.
-</p>
+The generated graph provides a vertical overview tracking:
 
-<p>Example configuration:</p>
+* **Overall Reward:** Aggregated group returns alongside an $N$-episode rolling average trend line.
+* **Training Loss:** Mean optimization costs highlighting model convergence or gradient spikes.
+* **Per-Agent Rewards:** Individual returns tracking behavioral discrepancies between sub-classes (e.g., *Knights* vs. *Archers*).
+* **Algorithmic Metric Tracking:** Dynamic tracking mapping parameter transitions over time (**Epsilon** for DQN loops or **Entropy** for PG environments).
 
-<pre><code>robot:
-  name: "Hexapod"
-  connected: true
-  UDP_IP: "0.0.0.0"
-  UDP_PORT: 5005
+```
 
-BR_Leg:
-  coax_loc: 0
-  femur_loc: 1
-  tibia_loc: 2
-  coax_length: 40
-  femur_length: 60
-  tibia_length: 80
-  min_x: -50
-  max_x: 50
-  min_y: -50
-  max_y: 50
-  min_z: -80
-  max_z: -10
-  inverse: false
-</code></pre>
-
-<hr>
-
-<h2>Usage</h2>
-
-<h3>Start the robot controller</h3>
-
-<pre><code>python main.py
-</code></pre>
-
-<p>
-  On startup, the controller will:
-</p>
-
-<ul>
-  <li>Load configuration values from <code>config.yml</code></li>
-  <li>Initialize servos if <code>connected</code> is set to <code>true</code></li>
-  <li>Bind to the configured UDP IP and port</li>
-  <li>Listen for incoming command messages</li>
-</ul>
-
-<hr>
-
-<h2>UDP Command Format</h2>
-
-<p>
-  Commands are sent as comma-separated strings over UDP to the configured IP address and port.
-</p>
-
-<h3>Move a limb</h3>
-
-<pre><code>move_limb,BR_Leg,10,20,30
-</code></pre>
-
-<h3>Shutdown the system</h3>
-
-<pre><code>shutdown
-</code></pre>
-
-<hr>
-
-<h2>Testing</h2>
-
-<pre><code>pytest -v
-</code></pre>
-
-<hr>
-
-<h2>Development Roadmap</h2>
-
-<ul>
-  <li>[ ] Gait engine for multi-limb coordination</li>
-  <li>[ ] Higher-level motion primitives (step, walk, turn)</li>
-  <li>[ ] WebSocket or HTTP control interface</li>
-  <li>[ ] Simulation mode with no hardware dependencies</li>
-</ul>
-
-<hr>
-
-<hr>
-
-<h2>License</h2>
-
-
-<hr>
-
-<h2>About</h2>
-
-<p>
-  This robot operating system is intended to provide a clear, extensible, and maintainable foundation for hobby
-  robotics, research platforms, and custom autonomous systems. It emphasizes readability, testability, and safe
-  operation around hardware.
-</p>
+```
