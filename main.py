@@ -426,8 +426,10 @@ def run_A2C(num_episodes=100, env=None, render=True, load_saved_model=False):
 
     learning_rate = 3e-4
     gamma = 0.99
-    entropy_coef = 0.01
-    rollout_length = 10
+    entropy_coef_start = 0.01
+    entropy_coef_decay = 0.999
+    entropy_coef_min = 0.001
+    rollout_length = 32
 
     t_board_writer = SummaryWriter(
         log_dir="runs/A2C_" + datetime.now().strftime("%m_%d_%H%M"),
@@ -448,7 +450,7 @@ def run_A2C(num_episodes=100, env=None, render=True, load_saved_model=False):
             action_space=action_size,
             learning_rate=learning_rate,
             gamma=gamma,
-            entropy_coef=entropy_coef,
+            entropy_coef=entropy_coef_start,
             rollout_length=rollout_length,
             hidden_layer_sizes=(128, 128),
         )
@@ -460,6 +462,13 @@ def run_A2C(num_episodes=100, env=None, render=True, load_saved_model=False):
 
     try:
         for episode in tqdm(range(1, num_episodes + 1)):
+
+            current_entropy_coef = max(
+                entropy_coef_min,
+                entropy_coef_start * (entropy_coef_decay ** (episode - 1))
+            )
+            for policy in agent_policies.values():
+                policy.entropy_coef = current_entropy_coef
 
             observations_before, _ = env.reset()
 
@@ -544,6 +553,7 @@ def run_A2C(num_episodes=100, env=None, render=True, load_saved_model=False):
                 t_board_writer.add_scalar(f"entropy/{agent}", avg_entropy, episode)
 
             t_board_writer.add_scalar("Total Reward", sum(episode_rewards.values()), episode)
+            t_board_writer.add_scalar("entropy_coef", current_entropy_coef, episode)
 
     except KeyboardInterrupt:
         print("\nTraining interrupted by user. Saving progress...")
